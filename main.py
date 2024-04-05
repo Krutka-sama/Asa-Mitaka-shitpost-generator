@@ -3,9 +3,13 @@ import logging
 import sys
 import re
 import random
+
+from aiogram.filters import CommandStart
+from aiogram.types import FSInputFile, BufferedInputFile
 from decouple import config
-from aiogram import Bot, Dispatcher, Router, types, F
-from database import connect, create_table, insert_text, insert_image, increment_count
+from aiogram import Bot, Dispatcher, types, F
+from database import connect, close, create_table, insert_text, insert_image, increment_count, get_image, get_text
+from shitpost import shitpost
 
 TOKEN = config('BOT_TOKEN')
 NAME = config('DB_NAME')
@@ -17,6 +21,24 @@ triggers = {
     'Планета ТРАХА': r"(?:планет[аеыуо]?\s?техно|пт)\b"
 
 }
+@dp.message(CommandStart())
+async def start(message: types.Message):
+    file_id = await get_image(message.chat.id)
+    text = await get_text(message.chat.id)
+    file_info = await bot.get_file(file_id)
+
+    # path = "img/" + str(message.chat.id) + ".png"
+    # await bot.download_file(file_info.file_path, path)
+    # await shitpost(text, path)
+    # photo = FSInputFile(path)
+    # await message.answer_photo(photo)
+
+    #I have no idea how to use streams in python so this is probably trash garbage shit curse death
+    image_data = await bot.download_file(file_info.file_path)
+    modified_image_buffer = await shitpost(text, image_data)
+    img=BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
+    await message.answer_photo(img)
+    modified_image_buffer.truncate(0)
 
 
 @dp.message(F.text)
@@ -48,10 +70,14 @@ async def echo_any(message: types.Message):
 
 
 async def main() -> None:
+    global bot
     bot = Bot(TOKEN)
     await connect(NAME)
     await create_table()
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    except:
+        await close()
 
 
 if __name__ == "__main__":

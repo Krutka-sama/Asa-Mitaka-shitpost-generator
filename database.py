@@ -1,11 +1,10 @@
 import sqlite3
-
 async def connect(db_name):
     global db, cursor
     db = sqlite3.connect(db_name)
     cursor = db.cursor()
 
-async def close(db):
+async def close():
     db.close()
 
 async def create_table():
@@ -47,7 +46,7 @@ async def reset_count(chat_id):
                          (chat_id,))
     cursor.connection.commit()
 
-async def get_text_message(chat_id):
+async def get_text(chat_id):
     cursor.execute("SELECT text FROM chat WHERE chat_id = ?", (chat_id,))
     row = cursor.fetchone()
     if row:
@@ -55,7 +54,7 @@ async def get_text_message(chat_id):
     else:
         return None
 
-async def get_image_message(chat_id):
+async def get_image(chat_id):
     cursor.execute("SELECT image FROM chat WHERE chat_id = ?", (chat_id,))
     row = cursor.fetchone()
     if row:
