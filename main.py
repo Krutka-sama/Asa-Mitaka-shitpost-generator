@@ -4,7 +4,7 @@ import sys
 import re
 import random
 
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import FSInputFile, BufferedInputFile
 from decouple import config
 from aiogram import Bot, Dispatcher, types, F
@@ -22,7 +22,7 @@ triggers = {
 
 }
 chance = 0.1
-async def post(message: types.Message, chance : float):
+async def post_random(message: types.Message, chance : float):
     if random.random() <= chance:
         file_id = await get_random_image(message.chat.id)
         text = await get_random_text(message.chat.id)
@@ -43,9 +43,38 @@ async def post(message: types.Message, chance : float):
         img=BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
         await message.answer_photo(img)
         modified_image_buffer.truncate(0)
-@dp.message(CommandStart())
-async def start(message: types.Message):
-    await post(message, 1)
+
+
+@dp.message(Command("Asa_shitpost"))
+async def asa_shitpost(message: types.Message):
+    if message.reply_to_message:
+        try:
+            img=message.reply_to_message.photo[-1].file_id
+        except:
+            img = await get_random_image(message.chat.id)
+        text = message.text[19::]
+        if not text:
+            text = message.reply_to_message.text
+            if not text:
+                text = await get_random_text(message.chat.id)
+    else:
+        try:
+            img=message.photo[-1].file_id
+        except:
+            img = await get_random_image(message.chat.id)
+            try:
+                text = message.caption[19::]
+            except:
+                text = await get_random_text(message.chat.id)
+    if not text or not img:
+        await message.answer("nah")
+        return
+    file_info = await bot.get_file(img)
+    image_data = await bot.download_file(file_info.file_path)
+    modified_image_buffer = await shitpost(text, image_data)
+    img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
+    await message.answer_photo(img)
+    modified_image_buffer.truncate(0)
 
 
 @dp.message(F.text)
@@ -56,24 +85,23 @@ async def echo_handler(message: types.Message) -> None:
         if re.search(pattern, text):
             await message.answer(text=response)
             break
-    await post(message, chance)
+    await post_random(message, chance)
 
 @dp.message(F.photo)
 async def echo_photo(message: types.Message) -> None:
     await insert_image(message.chat.id, message.photo[-1].file_id)
-    await post(message, chance)
+    await post_random(message, chance)
 
 
 @dp.message(F.sticker)
 async def echo_sticker(message: types.Message) -> None:
     await message.send_copy(chat_id=message.chat.id)
-    await post(message, chance)
+    await post_random(message, chance)
 
 
 @dp.message(~F.text & ~F.photo & ~F.sticker)
 async def echo_any(message: types.Message):
-    await post(message, chance)
-
+    await post_random(message, chance)
 
 async def main() -> None:
     global bot
