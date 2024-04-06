@@ -8,14 +8,13 @@ def contains_non_english(text):
         if not (0x20 <= ord(char) <= 0x7E):
             return True
     return False
-async def shitpost(text, image_data):
+async def shitpost(text, image_data, size : int):
     #img = Image.open(file_path)
 
     img = Image.open(image_data)
     width, height = img.size
     text_width = width * 0.8
     text_max_height = height * 0.8
-    size=45
     draw = ImageDraw.Draw(img)
     font_path = "fonts/Upright.ttf"
     if contains_non_english(text):

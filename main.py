@@ -2,30 +2,25 @@ import asyncio
 import logging
 import sys
 import re
-import random
-
+from random import random, choice
 from aiogram.filters import CommandStart, Command
-from aiogram.types import FSInputFile, BufferedInputFile
+from aiogram.types import BufferedInputFile, FSInputFile
 from decouple import config
 from aiogram import Bot, Dispatcher, types, F
 from database import *
 from shitpost import shitpost
+from stuff import *
 
 TOKEN = config('BOT_TOKEN')
 NAME = config('DB_NAME')
+SIZE = int(config('DEFAULT_SIZE'))
+CHANCE = float(config('DEFAULT_CHANCE'))
+CHANCE_STICKER = float(config('DEFAULT_CHANCE_STICKER'))
 dp = Dispatcher()
-
-triggers = {
-    'ТРАХ': r"\b\w*трах\w*\b",
-    'ГОВНО': r"\b\w+(?:core|кор)\b",
-    'Планета ТРАХА': r"(?:планет[аеыуо]?\s?техно|пт)\b"
-
-}
-chance = 0.1
 
 
 async def post_random(message: types.Message, chance: float):
-    if random.random() <= chance:
+    if random() <= chance:
         file_id = await get_random_image(message.chat.id)
         text = await get_random_text(message.chat.id)
         if not file_id or not text:
@@ -41,10 +36,28 @@ async def post_random(message: types.Message, chance: float):
 
         # I have no idea how to use streams in python so this is probably trash garbage shit curse death
         image_data = await bot.download_file(file_info.file_path)
-        modified_image_buffer = await shitpost(text, image_data)
+        modified_image_buffer = await shitpost(text, image_data, SIZE)
         img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
         await message.answer_photo(img)
         modified_image_buffer.truncate(0)
+
+
+async def post_femcel(message: types.Message, chance: float):
+    if random() <= chance:
+        try:
+            await message.answer_sticker(choice(femcel))
+        except:
+            photo = FSInputFile("img/asa.png")
+            await message.answer_photo(photo)
+
+
+@dp.message(CommandStart())
+async def command_start_handler(message: types.Message):
+    await message.answer(f"Hi, {message.from_user.full_name}, im autistic and i love shitposting\n\n"
+                         f"Use /Asa_shitpost to create shitpost from random last 100 messages and pictures,"
+                         f" you can also send me picture or reply to one with the same command"
+                         f" to create post with specific pic, it works with text too!\n\n"
+                         f"Use /Asa_femcel to send random Asa sticker")
 
 
 @dp.message(Command("Asa_shitpost"))
@@ -78,14 +91,19 @@ async def asa_shitpost(message: types.Message):
                 text = await get_random_text(message.chat.id)
             await get_random_text(message.chat.id)
     if not text or not img:
-        await message.answer("nah")
+        await message.answer("Nah")
         return
     file_info = await bot.get_file(img)
     image_data = await bot.download_file(file_info.file_path)
-    modified_image_buffer = await shitpost(text, image_data)
+    modified_image_buffer = await shitpost(text, image_data, SIZE)
     img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
     await message.answer_photo(img)
     modified_image_buffer.truncate(0)
+
+
+@dp.message(Command("Asa_femcel"))
+async def asa_femcel(message: types.Message):
+    await post_femcel(message, 1)
 
 
 @dp.message(F.text)
@@ -96,24 +114,28 @@ async def echo_handler(message: types.Message) -> None:
         if re.search(pattern, text):
             await message.answer(text=response)
             break
-    await post_random(message, chance)
+    await post_random(message, CHANCE)
+    await post_femcel(message, CHANCE_STICKER)
 
 
 @dp.message(F.photo)
 async def echo_photo(message: types.Message) -> None:
     await insert_image(message.chat.id, message.photo[-1].file_id)
-    await post_random(message, chance)
+    await post_random(message, CHANCE)
+    await post_femcel(message, CHANCE_STICKER)
 
 
 @dp.message(F.sticker)
 async def echo_sticker(message: types.Message) -> None:
     await message.send_copy(chat_id=message.chat.id)
-    await post_random(message, chance)
+    await post_random(message, CHANCE)
+    await post_femcel(message, CHANCE_STICKER)
 
 
 @dp.message(~F.text & ~F.photo & ~F.sticker)
 async def echo_any(message: types.Message):
-    await post_random(message, chance)
+    await post_random(message, CHANCE)
+    await post_femcel(message, CHANCE_STICKER)
 
 
 async def main() -> None:

@@ -1,6 +1,7 @@
 import sqlite3
-
-MAX = 50
+from decouple import config
+M_SCOPE = int(config('MESSAGES_SCOPE'))
+I_SCOPE = int(config('IMAGES_SCOPE'))
 
 
 async def connect(db_name):
@@ -26,14 +27,14 @@ async def create_table():
                                image TEXT
                            )''')
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS ban (
-                            id INTEGER PRIMARY KEY,
-                            chat_id INTEGER UNIQUE
-                        )''')
-    cursor.connection.commit()
+    # cursor.execute('''CREATE TABLE IF NOT EXISTS ban (
+    #                         id INTEGER PRIMARY KEY,
+    #                         chat_id INTEGER UNIQUE
+    #                     )''')
+    # cursor.connection.commit()
 
 
-async def insert_message(chat_id, text, max_rows=MAX):
+async def insert_message(chat_id, text, max_rows=M_SCOPE):
     cursor.execute("INSERT INTO message (chat_id, text) VALUES (?, ?)", (chat_id, text))
     cursor.connection.commit()
 
@@ -47,7 +48,7 @@ async def insert_message(chat_id, text, max_rows=MAX):
         cursor.connection.commit()
 
 
-async def insert_image(chat_id, image, max_rows=MAX):
+async def insert_image(chat_id, image, max_rows=I_SCOPE):
     cursor.execute("INSERT INTO image (chat_id, image) VALUES (?, ?)", (chat_id, image))
     cursor.connection.commit()
 
