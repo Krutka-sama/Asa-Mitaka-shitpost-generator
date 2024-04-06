@@ -24,7 +24,7 @@ async def post_random(message: types.Message, chance: float):
         file_id = await get_random_image(message.chat.id)
         text = await get_random_text(message.chat.id)
         if not file_id or not text:
-            await message.answer(text="dumbass")
+            await message.answer("Dumbass")
             return
         file_info = await bot.get_file(file_id)
 
@@ -47,13 +47,12 @@ async def post_femcel(message: types.Message, chance: float):
         try:
             await message.answer_sticker(choice(femcel))
         except:
-            photo = FSInputFile("img/asa.png")
-            await message.answer_photo(photo)
+            await message.asnwer("???")
 
 
 @dp.message(CommandStart())
 async def command_start_handler(message: types.Message):
-    await message.answer(f"Hi, {message.from_user.full_name}, Im Asa Mitaka. Im autistic and I love shitposting\n\n"
+    await message.answer(f"Hi, {message.from_user.full_name}, Im Asa Mitaka. Im autistic and I love shitposting.\n\n"
                          f"Use /Asa_shitpost to create a shitpost from random last 100 messages and pics,"
                          f" you can also send me a pic or reply to one with the same command"
                          f" to create post with specific pic, it works with text too!")
@@ -110,7 +109,7 @@ async def echo_handler(message: types.Message) -> None:
         return
     for response, pattern in triggers.items():
         if re.search(pattern, text):
-            await message.answer(text=response)
+            await message.answer(response)
             break
     await post_random(message, CHANCE)
     await post_femcel(message, CHANCE_STICKER)
