@@ -22,7 +22,9 @@ triggers = {
 
 }
 chance = 0.1
-async def post_random(message: types.Message, chance : float):
+
+
+async def post_random(message: types.Message, chance: float):
     if random.random() <= chance:
         file_id = await get_random_image(message.chat.id)
         text = await get_random_text(message.chat.id)
@@ -37,10 +39,10 @@ async def post_random(message: types.Message, chance : float):
         # photo = FSInputFile(path)
         # await message.answer_photo(photo)
 
-        #I have no idea how to use streams in python so this is probably trash garbage shit curse death
+        # I have no idea how to use streams in python so this is probably trash garbage shit curse death
         image_data = await bot.download_file(file_info.file_path)
         modified_image_buffer = await shitpost(text, image_data)
-        img=BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
+        img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
         await message.answer_photo(img)
         modified_image_buffer.truncate(0)
 
@@ -49,23 +51,32 @@ async def post_random(message: types.Message, chance : float):
 async def asa_shitpost(message: types.Message):
     if message.reply_to_message:
         try:
-            img=message.reply_to_message.photo[-1].file_id
+            img = message.reply_to_message.photo[-1].file_id
         except:
             img = await get_random_image(message.chat.id)
-        text = message.text[19::]
+        text = message.text[13::]
         if not text:
             text = message.reply_to_message.text
             if not text:
                 text = await get_random_text(message.chat.id)
     else:
         try:
-            img=message.photo[-1].file_id
+            img = message.photo[-1].file_id
         except:
             img = await get_random_image(message.chat.id)
-            try:
-                text = message.caption[19::]
-            except:
+        try:
+            text = message.caption[13::]
+            if not text:
+                try:
+                    text = message.text[13::]
+                    if not text: text = await get_random_text(message.chat.id)
+                except:
+                    text = await get_random_text(message.chat.id)
+        except:
+            text = message.text[13::]
+            if not text:
                 text = await get_random_text(message.chat.id)
+            await get_random_text(message.chat.id)
     if not text or not img:
         await message.answer("nah")
         return
@@ -87,6 +98,7 @@ async def echo_handler(message: types.Message) -> None:
             break
     await post_random(message, chance)
 
+
 @dp.message(F.photo)
 async def echo_photo(message: types.Message) -> None:
     await insert_image(message.chat.id, message.photo[-1].file_id)
@@ -102,6 +114,7 @@ async def echo_sticker(message: types.Message) -> None:
 @dp.message(~F.text & ~F.photo & ~F.sticker)
 async def echo_any(message: types.Message):
     await post_random(message, chance)
+
 
 async def main() -> None:
     global bot
