@@ -53,9 +53,9 @@ async def post_femcel(message: types.Message, chance: float):
 
 @dp.message(CommandStart())
 async def command_start_handler(message: types.Message):
-    await message.answer(f"Hi, {message.from_user.full_name} im Asa Mitaka and im autistic and i love shitposting\n\n"
-                         f"Use /Asa_shitpost to create shitpost from random last 100 messages and pictures,"
-                         f" you can also send me picture or reply to one with the same command"
+    await message.answer(f"Hi, {message.from_user.full_name}, Im Asa Mitaka. Im autistic and I love shitposting\n\n"
+                         f"Use /Asa_shitpost to create a shitpost from random last 100 messages and pics,"
+                         f" you can also send me a pic or reply to one with the same command"
                          f" to create post with specific pic, it works with text too!")
 
 
