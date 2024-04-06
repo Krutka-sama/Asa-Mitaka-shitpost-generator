@@ -53,11 +53,10 @@ async def post_femcel(message: types.Message, chance: float):
 
 @dp.message(CommandStart())
 async def command_start_handler(message: types.Message):
-    await message.answer(f"Hi, {message.from_user.full_name}, im autistic and i love shitposting\n\n"
+    await message.answer(f"Hi, {message.from_user.full_name} im Asa Mitaka and im autistic and i love shitposting\n\n"
                          f"Use /Asa_shitpost to create shitpost from random last 100 messages and pictures,"
                          f" you can also send me picture or reply to one with the same command"
-                         f" to create post with specific pic, it works with text too!\n\n"
-                         f"Use /Asa_femcel to send random Asa sticker")
+                         f" to create post with specific pic, it works with text too!")
 
 
 @dp.message(Command("Asa_shitpost"))
@@ -101,15 +100,14 @@ async def asa_shitpost(message: types.Message):
     modified_image_buffer.truncate(0)
 
 
-@dp.message(Command("Asa_femcel"))
-async def asa_femcel(message: types.Message):
-    await post_femcel(message, 1)
-
-
 @dp.message(F.text)
 async def echo_handler(message: types.Message) -> None:
     text = message.text.lower()
     await insert_message(message.chat.id, text)
+    if re.search(r"\b(?:f+e+m+c+e+l+|ф+е+м+ц+е+л+)\b", text):
+        await post_femcel(message, 1)
+        await post_random(message, CHANCE)
+        return
     for response, pattern in triggers.items():
         if re.search(pattern, text):
             await message.answer(text=response)
