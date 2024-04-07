@@ -69,7 +69,9 @@ async def asa_shitpost(message: types.Message):
         if not text:
             text = message.reply_to_message.text
             if not text:
-                text = await get_random_text(message.chat.id)
+                text = message.reply_to_message.caption
+                if not text:
+                    text = await get_random_text(message.chat.id)
     else:
         try:
             img = message.photo[-1].file_id
