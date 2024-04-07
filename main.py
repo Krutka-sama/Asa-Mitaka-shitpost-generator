@@ -103,7 +103,7 @@ async def asa_shitpost(message: types.Message):
 async def echo_handler(message: types.Message) -> None:
     text = message.text.lower()
     await insert_message(message.chat.id, text)
-    if re.search(r"\b(?:f+e+m+c+e+l+|ф+е+м+ц+е+л+)\b", text):
+    if re.search(r"\b(?:f+e+m+?.?c+e+l+\w*|ф+е+м+?.?ц+е+л+\w*|a+s+a+?.?|а+с+?.?|а+с+а+|m+i+t+a+k+?.?|м+и+т+а+к+?.?)\b", text):
         await post_femcel(message, 1)
         await post_random(message, CHANCE)
         return
