@@ -60,7 +60,8 @@ async def command_start_handler(message: types.Message):
                          f" you can also send me a pic directly or reply to one with the same command"
                          f" to create post with the pic you want, it works with text too!\n\n"
                          f"Use /Asa_delete_message and /Asa_delete_image"
-                         f" to get rid of unwanted pictures and signatures!")
+                         f" to get rid of unwanted pictures and signatures!\n\n"
+                         f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!")
 
 
 @dp.message(Command("Asa_shitpost"))
