@@ -20,13 +20,13 @@ async def create_table():
     cursor.execute('''CREATE TABLE IF NOT EXISTS message (
                                id INTEGER PRIMARY KEY,
                                chat_id INTEGER NOT NULL,
-                               message TEXT UNIQUE NOT NULL
+                               message TEXT NOT NULL, UNIQUE(chat_id, message)
                            )''')
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS image (
                                id INTEGER PRIMARY KEY,
                                chat_id INTEGER NOT NULL,
-                               image TEXT UNIQUE NOT NULL
+                               image TEXT NOT NULL, UNIQUE(chat_id, image)
                            )''')
 
 
