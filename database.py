@@ -85,12 +85,16 @@ async def get_random_image(chat_id : int):
 
 
 async def delete_message(chat_id : int, message : str):
-    cursor.execute("SELECT COUNT(*) FROM message WHERE chat_id = ? AND message = ?", (chat_id, message))
-    num_rows = cursor.fetchone()[0]
-    if num_rows > 0:
-        cursor.execute("DELETE FROM message WHERE chat_id = ? AND message = ?", (chat_id, message))
-        cursor.connection.commit()
-        return True
+    message = replace_emoji(message, "").lower()
+    if message:
+        cursor.execute("SELECT COUNT(*) FROM message WHERE chat_id = ? AND message = ?", (chat_id, message))
+        num_rows = cursor.fetchone()[0]
+        if num_rows > 0:
+            cursor.execute("DELETE FROM message WHERE chat_id = ? AND message = ?", (chat_id, message))
+            cursor.connection.commit()
+            return True
+        else:
+            return False
     else:
         return False
 
