@@ -25,7 +25,7 @@ async def shitpost_impact(text: str, image_data):
     # img = Image.open(file_path)
     img = Image.open(image_data)
     width, height = img.size
-    text_width = width * 0.9 - 20
+    text_width = width * 0.9
     text_max_height = height * 0.2
     draw = ImageDraw.Draw(img)
     font_path = "fonts/ofont.ru_Impact.ttf"
@@ -54,13 +54,10 @@ async def shitpost_impact(text: str, image_data):
             break
         else:
             size += 1
-    print(quote)
     if quote.count("\n"):
         a, b = split_list_in_two(lines)
-        print(a, b)
         a = "\n".join(a)
         b = "\n".join(b)
-        print(a, b)
         x1, y1, x2, y2 = draw.multiline_textbbox((0, 0), a, font, stroke_width=2)
         w, h = x2 - x1, y2 - y1
         draw.multiline_text((width / 2 - w / 2 - x1, height * 0.01 + h - y2), a, font=font, align="center",
@@ -88,8 +85,6 @@ async def shitpost_pinterst(text, image_data, size: int):
     text_max_height = height * 0.8
     draw = ImageDraw.Draw(img)
     font_path = "fonts/Upright.ttf"
-    # if contains_non_english(text):
-    #     font_path = "fonts/ofont.ru_Impact.ttf"
     while size > 9:
         font = ImageFont.truetype(font_path, size)
         lines = []
@@ -107,7 +102,6 @@ async def shitpost_pinterst(text, image_data, size: int):
         if line:
             lines.append(line)
         quote = "\n".join(lines)
-
         x1, y1, x2, y2 = draw.multiline_textbbox((0, 0), quote, font, stroke_width=2)
         w, h = x2 - x1, y2 - y1
         if h <= text_max_height:
