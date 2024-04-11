@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 import re
-from random import random, choice
+from random import random, shuffle, choice
 from aiogram.filters import CommandStart, Command
 from aiogram.types import BufferedInputFile
 # from aiogram.types import FSInputFile
@@ -16,10 +16,26 @@ from stuff import *
 TOKEN = config('BOT_TOKEN')
 NAME = config('DB_NAME')
 OWNER = config('OWNER_ID')
-SIZE = int(config('DEFAULT_SIZE'))
+SIZE_LAT = int(config('DEFAULT_SIZE_LAT'))
 CHANCE = float(config('DEFAULT_CHANCE'))
 CHANCE_STICKER = float(config('DEFAULT_CHANCE_STICKER'))
+CHANCE_SAY = float(config('DEFAULT_CHANCE_SAY'))
 dp = Dispatcher()
+
+
+async def say_stuff(message: types.Message, chance: float):
+    if random() <= chance:
+        text = await get_random_text(message.chat.id)
+        if not text:
+            await message.answer("Fuck you")
+            return
+        text = text.split(" ")
+        shuffle(text)
+        answer = ""
+        for i in text:
+            answer += i
+            answer += " "
+        await message.answer(answer.capitalize())
 
 
 async def post_random(message: types.Message, chance: float):
@@ -39,7 +55,7 @@ async def post_random(message: types.Message, chance: float):
 
         # I have no idea how to use streams in python so this is probably trash garbage shit curse death
         image_data = await bot.download_file(file_info.file_path)
-        modified_image_buffer = await shitpost(text, image_data, SIZE)
+        modified_image_buffer = await shitpost(text, image_data, SIZE_LAT)
         img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
         await message.answer_photo(img)
         modified_image_buffer.truncate(0)
@@ -101,7 +117,7 @@ async def asa_shitpost(message: types.Message):
         return
     file_info = await bot.get_file(img)
     image_data = await bot.download_file(file_info.file_path)
-    modified_image_buffer = await shitpost(text, image_data, SIZE)
+    modified_image_buffer = await shitpost(text, image_data, SIZE_LAT)
     img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
     await message.answer_photo(img)
     modified_image_buffer.truncate(0)
@@ -196,6 +212,7 @@ async def echo_handler(message: types.Message) -> None:
             await message.answer(response)
             break
     await post_random(message, CHANCE)
+    await say_stuff(message, CHANCE_SAY)
     await post_femcel(message, CHANCE_STICKER)
 
 
@@ -213,6 +230,7 @@ async def echo_photo(message: types.Message) -> None:
         pass
     if text: await insert_message(message.chat.id, text.lower())
     await post_random(message, CHANCE)
+    await say_stuff(message, CHANCE_SAY)
     await post_femcel(message, CHANCE_STICKER)
 
 
@@ -220,6 +238,7 @@ async def echo_photo(message: types.Message) -> None:
 async def echo_sticker(message: types.Message) -> None:
     await message.send_copy(chat_id=message.chat.id)
     await post_random(message, CHANCE)
+    await say_stuff(message, CHANCE_SAY)
     await post_femcel(message, CHANCE_STICKER)
 
 
@@ -236,6 +255,7 @@ async def echo_any(message: types.Message):
         pass
     if text: await insert_message(message.chat.id, text.lower())
     await post_random(message, CHANCE)
+    await say_stuff(message, CHANCE_SAY)
     await post_femcel(message, CHANCE_STICKER)
 
 
