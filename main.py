@@ -46,7 +46,7 @@ async def on_startup():
 
 @dp.shutdown()
 async def on_shutdown():
-    await bot.send_message(chat_id=OWNER, text="Hii im back")
+    await bot.send_message(chat_id=OWNER, text="Im outta here")
 
     await bot.send_message(chat_id=-1002009922325, text="Im outta here")
 
@@ -73,13 +73,11 @@ def blacklist_check(func):
 async def say_stuff(message: types.Message, chance: float):
     if random() <= chance:
         text = await get_random_text(message.chat.id)
+        text2 = await get_random_text(message.chat.id)
         if not text:
             await message.answer("Fuck you")
             return
-        text = text.split(" ")
-        if len(text) == 1:
-            await message.answer(text[0].capitalize())
-            return
+        text = text.split(" ") + text2.split(" ")
         shuffle(text)
         answer = ""
         for i in text:
