@@ -29,8 +29,13 @@ async def create_table():
                                image TEXT NOT NULL, UNIQUE(chat_id, image)
                            )''')
 
+    cursor.execute('''CREATE TABLE IF NOT EXISTS ban (
+                               id INTEGER PRIMARY KEY,
+                               chat_id INTEGER NOT NULL UNIQUE
+                           )''')
 
-async def insert_message(chat_id : int, message : str, max_rows=M_SCOPE):
+
+async def insert_message(chat_id: int, message: str, max_rows=M_SCOPE):
     message = replace_emoji(message, "")
     if message:
         cursor.execute("SELECT COUNT(*) FROM message WHERE chat_id = ? AND message = ?", (chat_id, message))
@@ -49,7 +54,7 @@ async def insert_message(chat_id : int, message : str, max_rows=M_SCOPE):
                 cursor.connection.commit()
 
 
-async def insert_image(chat_id : int, image : str, max_rows=I_SCOPE):
+async def insert_image(chat_id: int, image: str, max_rows=I_SCOPE):
     cursor.execute("SELECT COUNT(*) FROM image WHERE chat_id = ? AND image = ?", (chat_id, image))
     num_rows = cursor.fetchone()[0]
     if not num_rows:
@@ -66,7 +71,7 @@ async def insert_image(chat_id : int, image : str, max_rows=I_SCOPE):
             cursor.connection.commit()
 
 
-async def get_random_text(chat_id : int):
+async def get_random_text(chat_id: int):
     cursor.execute("SELECT message FROM message WHERE chat_id = ? ORDER BY RANDOM() LIMIT 1", (chat_id,))
     row = cursor.fetchone()
     if row:
@@ -75,7 +80,7 @@ async def get_random_text(chat_id : int):
         return None
 
 
-async def get_random_image(chat_id : int):
+async def get_random_image(chat_id: int):
     cursor.execute("SELECT image FROM image WHERE chat_id = ? ORDER BY RANDOM() LIMIT 1", (chat_id,))
     row = cursor.fetchone()
     if row:
@@ -84,7 +89,7 @@ async def get_random_image(chat_id : int):
         return None
 
 
-async def delete_message(chat_id : int, message : str):
+async def delete_message(chat_id: int, message: str):
     message = replace_emoji(message, "").lower()
     if message:
         cursor.execute("SELECT COUNT(*) FROM message WHERE chat_id = ? AND message = ?", (chat_id, message))
@@ -99,7 +104,7 @@ async def delete_message(chat_id : int, message : str):
         return False
 
 
-async def delete_image(chat_id : int, image : str):
+async def delete_image(chat_id: int, image: str):
     cursor.execute("SELECT COUNT(*) FROM image WHERE chat_id = ? AND image = ?", (chat_id, image))
     num_rows = cursor.fetchone()[0]
     if num_rows > 0:
@@ -110,11 +115,27 @@ async def delete_image(chat_id : int, image : str):
         return False
 
 
-async def delete_all_messages(chat_id : int):
+async def delete_all_messages(chat_id: int):
     cursor.execute("DELETE FROM message WHERE chat_id = ?", (chat_id,))
     cursor.connection.commit()
 
 
-async def delete_all_images(chat_id : int):
+async def delete_all_images(chat_id: int):
     cursor.execute("DELETE FROM image WHERE chat_id = ?", (chat_id,))
+    cursor.connection.commit()
+
+
+async def get_banned() -> list[int]:
+    cursor.execute("SELECT chat_id FROM ban")
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
+
+
+async def ban(chat_id: int):
+    cursor.execute("INSERT INTO ban (chat_id) VALUES (?)", (chat_id,))
+    cursor.connection.commit()
+
+
+async def unban(chat_id: int):
+    cursor.execute("DELETE FROM ban WHERE chat_id = ?", (chat_id,))
     cursor.connection.commit()

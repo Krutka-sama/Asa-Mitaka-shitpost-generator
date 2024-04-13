@@ -1,0 +1,2 @@
+class Banned(Exception):
+    pass
