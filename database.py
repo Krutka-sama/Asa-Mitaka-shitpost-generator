@@ -32,6 +32,16 @@ async def create_table():
     cursor.execute('''CREATE TABLE IF NOT EXISTS ban (
                                id INTEGER PRIMARY KEY,
                                chat_id INTEGER NOT NULL UNIQUE
+                            )''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS settings (
+                               id INTEGER PRIMARY KEY,
+                               chat_id INTEGER NOT NULL UNIQUE,
+                               SIZE_LAT INTEGER NOT NULL,
+                               CHANCE REAL NOT NULL,
+                               CHANCE_STICKER REAL NOT NULL,
+                               CHANCE_SAY REAL NOT NULL,
+                               CHANCE_SKIP REAL NOT NULL
                            )''')
 
 
@@ -138,4 +148,23 @@ async def ban(chat_id: int):
 
 async def unban(chat_id: int):
     cursor.execute("DELETE FROM ban WHERE chat_id = ?", (chat_id,))
+    cursor.connection.commit()
+
+
+async def get_all_settings():
+    cursor.execute("SELECT chat_id, SIZE_LAT, CHANCE, CHANCE_STICKER, CHANCE_SAY, CHANCE_SKIP FROM settings")
+    rows = cursor.fetchall()
+    settings = {row[0]: row[1:] for row in rows}
+    return settings
+
+
+async def set_settings(chat_id: int, data: list):
+    cursor.execute(
+        "INSERT OR REPLACE INTO settings (chat_id, SIZE_LAT, CHANCE, CHANCE_STICKER, CHANCE_SAY, CHANCE_SKIP) VALUES (?, ?, ?, ?, ?, ?)",
+        (chat_id, *data))
+    cursor.connection.commit()
+
+
+async def delete_settings(chat_id: int):
+    cursor.execute("DELETE FROM settings WHERE chat_id=?", (chat_id,))
     cursor.connection.commit()

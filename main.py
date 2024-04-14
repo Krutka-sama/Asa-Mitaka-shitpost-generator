@@ -9,7 +9,8 @@ from aiogram.types import BufferedInputFile
 from decouple import config
 from aiogram import Bot, Dispatcher, types, F
 from database import create_table, connect, close, insert_message, insert_image, get_random_text, get_random_image, \
-    delete_message, delete_image, delete_all_messages, delete_all_images, get_banned, ban, unban
+    delete_message, delete_image, delete_all_messages, delete_all_images, get_banned, ban, unban, get_all_settings, \
+    delete_settings, set_settings
 from shitpost import shitpost
 from stuff import *
 from exeption import Banned
@@ -23,18 +24,15 @@ NAME = config('DB_NAME')
 OWNER = int(config('OWNER_ID'))
 SIZE_LAT = int(config('DEFAULT_SIZE_LAT'))
 CHANCE = float(config('DEFAULT_CHANCE'))
-CHANCE_SKIP = float(config('DEFAULT_CHANCE_SKIP_WORD'))
 CHANCE_STICKER = float(config('DEFAULT_CHANCE_STICKER'))
 CHANCE_SAY = float(config('DEFAULT_CHANCE_SAY'))
+CHANCE_SKIP = float(config('DEFAULT_CHANCE_SKIP_WORD'))
 
 BLACK_LIST: list[int] = []
+SETTINGS = {0: [SIZE_LAT, CHANCE, CHANCE_STICKER,
+                CHANCE_SAY, CHANCE_SKIP]}
 
 dp = Dispatcher()
-
-
-# DEFAULT_SETTINGS = {"id": None, "SIZE_LAT": SIZE_LAT, "CHANCE": CHANCE,
-#                     "CHANCE_SKIP": CHANCE_SKIP,
-#                     "CHANCE_STICKER": CHANCE_STICKER, "CHANCE_SAY": CHANCE_SAY}
 
 
 @dp.startup()
@@ -51,6 +49,59 @@ async def on_shutdown():
     await bot.send_message(chat_id=-1002009922325, text="Im outta here")
 
     await close()
+
+
+async def validate_settings(message: types.Message) -> list | None:
+    s = message.text
+    try:
+        s = list(map(float, s[18::].split(" ")))
+    except ValueError:
+        await message.answer("Bruh")
+        return
+    if len(s) != 5:
+        await message.answer("Invalid settings, moron")
+        return
+
+    s[0] = int(s[0])
+    s[1] = round(s[1], 2)
+    s[2] = round(s[2], 2)
+    s[3] = round(s[3], 2)
+    s[4] = round(s[4], 2)
+
+    SIZE_LAT = s[0]
+    CHANCE = s[1]
+    CHANCE_STICKER = s[2]
+    CHANCE_SAY = s[3]
+    CHANCE_SKIP = s[4]
+
+    if SIZE_LAT > 100 or SIZE_LAT < 10:
+        await message.answer("Invalid size")
+        return
+
+    if CHANCE > 0.8 or CHANCE < 0:
+        await message.answer("Invalid chance to shitpost")
+        return
+
+    if CHANCE_STICKER > 0.8 or CHANCE_STICKER < 0:
+        await message.answer("Invalid chance to send sticker")
+        return
+
+    if CHANCE_SAY > 0.5 or CHANCE_SAY < 0:
+        await message.answer("Invalid chance to say something")
+        return
+
+    if CHANCE_SKIP > 1 or CHANCE_SKIP < 0:
+        await message.answer("Invalid chance to skip word")
+        return
+    return s
+
+
+def format_settings(s: list) -> str:
+    return (f"Latin text size {s[0]}\n"
+            f"Chance to post {s[1]}\n"
+            f"Chance to send sticker {s[2]}\n"
+            f"Chance to say something {s[3]}\n"
+            f"Chance to skip word when saying something {s[4]}")
 
 
 def black_list(message: types.Message):
@@ -81,7 +132,7 @@ async def say_stuff(message: types.Message, chance: float):
         shuffle(text)
         answer = ""
         for i in text:
-            if random() <= CHANCE_SKIP:
+            if random() <= SETTINGS.get(message.chat.id, SETTINGS.get(0))[4]:
                 continue
             answer += " "
             answer += i
@@ -108,7 +159,7 @@ async def post_random(message: types.Message, chance: float):
 
         # I have no idea how to use streams in python so this is probably trash garbage shit curse death
         image_data = await bot.download_file(file_info.file_path)
-        modified_image_buffer = await shitpost(text, image_data, SIZE_LAT)
+        modified_image_buffer = await shitpost(text, image_data, SETTINGS.get(message.chat.id, SETTINGS.get(0))[0])
         img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
         await message.answer_photo(img)
         modified_image_buffer.truncate(0)
@@ -131,6 +182,18 @@ async def command_start_handler(message: types.Message):
                          f" to create post with the pic you want, it works with text too!\n\n"
                          f"Use /Asa_delete_message and /Asa_delete_image"
                          f" to get rid of unwanted pictures and signatures!\n\n"
+                         f"Use /Asa_settings to check your current settings\n"
+                         f"Use /Asa_set_default to return to default settings\n"
+                         f"Use /Asa_set_settings to change settings, use the example:\n"
+                         f"/Asa_set_settings 60 0.1 0.05 0.01 0.4\n"
+                         f"This will make latin text size 60, chance to post 10%, chance to send sticker 5%, "
+                         f"chance to say something 1% and chance to skip word when saying something 40%\n"
+                         f"You must provide 5 numbers and:\n"
+                         f"Text size must in (10;100)\n"
+                         f"Post chance in [0.0;0.8]\n"
+                         f"Sticker chance in [0.0;0.8]\n"
+                         f"Say chance in [0.0;0.5]\n"
+                         f"Skip chance in [0.0;1.0]\n\n"
                          f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!")
 
 
@@ -172,7 +235,7 @@ async def asa_shitpost(message: types.Message):
         return
     file_info = await bot.get_file(img)
     image_data = await bot.download_file(file_info.file_path)
-    modified_image_buffer = await shitpost(text, image_data, SIZE_LAT)
+    modified_image_buffer = await shitpost(text, image_data, SETTINGS.get(message.chat.id, SETTINGS.get(0))[0])
     img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
     await message.answer_photo(img)
     modified_image_buffer.truncate(0)
@@ -291,6 +354,35 @@ async def asa_unban(message: types.Message):
         await message.answer("No way")
 
 
+@dp.message(Command("Asa_settings"))
+@blacklist_check
+async def asa_settings(message: types.Message):
+    await message.answer(f"Current settings for {message.chat.id}:\n"+format_settings(SETTINGS.get(message.chat.id, SETTINGS.get(0))))
+
+
+@dp.message(Command("Asa_set_settings"))
+@blacklist_check
+async def asa_set_settings(message: types.Message):
+    settings = await validate_settings(message)
+    if settings:
+        SETTINGS[message.chat.id] = settings
+        await set_settings(message.chat.id, settings)
+        await asa_settings(message)
+    else:
+        return
+
+
+@dp.message(Command("Asa_set_default"))
+@blacklist_check
+async def asa_set_default(message: types.Message):
+    try:
+        SETTINGS.pop(message.chat.id)
+        await delete_settings(message.chat.id)
+        await asa_settings(message)
+    except KeyError:
+        await message.answer("Your settings are default, idiot")
+
+
 @dp.message(F.text)
 @blacklist_check
 async def echo_handler(message: types.Message) -> None:
@@ -304,24 +396,23 @@ async def echo_handler(message: types.Message) -> None:
         #return
 
         if random() <= 0.9:
-            print("here")
             await post_femcel(message, 1)
-            await post_random(message, CHANCE)
+            await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
             return
         else:
             await say_stuff(message, 1)
-            await post_random(message, CHANCE)
+            await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
             return
 
     for response, pattern in triggers.items():
         if re.search(pattern, text):
             await message.answer(response)
             break
-    await post_random(message, CHANCE)
+    await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
 
-    await say_stuff(message, CHANCE_SAY)
+    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
 
-    await post_femcel(message, CHANCE_STICKER)
+    await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
 @dp.message(F.photo)
@@ -338,18 +429,18 @@ async def echo_photo(message: types.Message) -> None:
     except:
         pass
     if text: await insert_message(message.chat.id, text.lower())
-    await post_random(message, CHANCE)
-    await say_stuff(message, CHANCE_SAY)
-    await post_femcel(message, CHANCE_STICKER)
+    await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
 @dp.message(F.sticker)
 @blacklist_check
 async def echo_sticker(message: types.Message) -> None:
     await message.send_copy(chat_id=message.chat.id)
-    await post_random(message, CHANCE)
-    await say_stuff(message, CHANCE_SAY)
-    await post_femcel(message, CHANCE_STICKER)
+    await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
 @dp.message(~F.text & ~F.photo & ~F.sticker)
@@ -365,13 +456,13 @@ async def echo_any(message: types.Message):
     except:
         pass
     if text: await insert_message(message.chat.id, text.lower())
-    await post_random(message, CHANCE)
-    await say_stuff(message, CHANCE_SAY)
-    await post_femcel(message, CHANCE_STICKER)
+    await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
 async def main() -> None:
-    global bot, BLACK_LIST
+    global bot, BLACK_LIST, SETTINGS
     bot = Bot(TOKEN)
 
     # session = AiohttpSession(proxy=PROXY_URL)
@@ -380,6 +471,7 @@ async def main() -> None:
     await connect(NAME)
     await create_table()
     BLACK_LIST = await get_banned()
+    SETTINGS |= await get_all_settings()
     await dp.start_polling(bot)
 
 
