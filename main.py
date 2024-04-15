@@ -194,7 +194,9 @@ async def command_start_handler(message: types.Message):
                          f"Sticker chance in [0.0;0.8]\n"
                          f"Say chance in [0.0;0.5]\n"
                          f"Skip chance in [0.0;1.0]\n\n"
-                         f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!")
+                         f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!\n\n"
+                         f"I (currently) dont encrypt your data so copy&modify me and host by yourself if you care about your privacy!!!\n"
+                         f"If you need any help or have a suggestion dm my creator @krutka_sama")
 
 
 @dp.message(Command("Asa_shitpost"))
