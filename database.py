@@ -168,3 +168,10 @@ async def set_settings(chat_id: int, data: list):
 async def delete_settings(chat_id: int):
     cursor.execute("DELETE FROM settings WHERE chat_id=?", (chat_id,))
     cursor.connection.commit()
+
+
+async def get_chat_ids():
+    cursor.execute("SELECT DISTINCT chat_id FROM message")
+    rows = cursor.fetchall()
+    chat_ids = [row[0] for row in rows]
+    return chat_ids

@@ -10,7 +10,7 @@ from decouple import config
 from aiogram import Bot, Dispatcher, types, F
 from database import create_table, connect, close, insert_message, insert_image, get_random_text, get_random_image, \
     delete_message, delete_image, delete_all_messages, delete_all_images, get_banned, ban, unban, get_all_settings, \
-    delete_settings, set_settings
+    delete_settings, set_settings, get_chat_ids
 from shitpost import shitpost
 from stuff import *
 from exeption import Banned
@@ -37,17 +37,16 @@ dp = Dispatcher()
 
 @dp.startup()
 async def on_startup():
-    await bot.send_message(chat_id=OWNER, text="Hii im back")
-
-    await bot.send_message(chat_id=-1002009922325, text="Hii im back")
+    ids = await get_chat_ids()
+    for chat_id in ids:
+        await bot.send_message(chat_id=chat_id, text="Hii im back")
 
 
 @dp.shutdown()
 async def on_shutdown():
-    await bot.send_message(chat_id=OWNER, text="Im outta here")
-
-    await bot.send_message(chat_id=-1002009922325, text="Im outta here")
-
+    ids = await get_chat_ids()
+    for chat_id in ids:
+        await bot.send_message(chat_id=chat_id, text="Im outta here")
     await close()
 
 
@@ -181,7 +180,8 @@ async def command_start_handler(message: types.Message):
                          f" you can also send me a pic directly or reply to one with the same command"
                          f" to create post with the pic you want, it works with text too!\n\n"
                          f"Use /Asa_delete_message and /Asa_delete_image"
-                         f" to get rid of unwanted pictures and signatures!\n\n"
+                         f" to get rid of unwanted pictures and signatures!\n"
+                         f"Use /Asa_say to say something\n\n"
                          f"Use /Asa_settings to check your current settings\n"
                          f"Use /Asa_set_default to return to default settings\n"
                          f"Use /Asa_set_settings to change settings, use the example:\n"
@@ -359,7 +359,8 @@ async def asa_unban(message: types.Message):
 @dp.message(Command("Asa_settings"))
 @blacklist_check
 async def asa_settings(message: types.Message):
-    await message.answer(f"Current settings for {message.chat.id}:\n"+format_settings(SETTINGS.get(message.chat.id, SETTINGS.get(0))))
+    await message.answer(
+        f"Current settings for {message.chat.id}:\n" + format_settings(SETTINGS.get(message.chat.id, SETTINGS.get(0))))
 
 
 @dp.message(Command("Asa_set_settings"))
@@ -383,6 +384,12 @@ async def asa_set_default(message: types.Message):
         await asa_settings(message)
     except KeyError:
         await message.answer("Your settings are default, idiot")
+
+
+@dp.message(Command("Asa_say"))
+@blacklist_check
+async def asa_say(message: types.Message):
+    await say_stuff(message, 1)
 
 
 @dp.message(F.text)
@@ -457,7 +464,31 @@ async def echo_any(message: types.Message):
         text = message.caption
     except:
         pass
-    if text: await insert_message(message.chat.id, text.lower())
+    if text:
+        text = text.lower()
+        await insert_message(message.chat.id, text)
+
+        if re.search(
+                r"\b(?:f+e+m+?.?c+e+l+\w*|ф+е+м+?.?ц+е+л+\w*|a+s+a+?.?|а+с+?.?|а+с+а+|m+i+t+a+k+?.?|м+и+т+а+к+?.?)\b",
+                text):
+            # await insert_message(message.chat.id, text)
+            # await post_femcel(message, 1)
+            # await post_random(message, CHANCE)
+            # return
+
+            if random() <= 0.9:
+                await post_femcel(message, 1)
+                await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+                return
+            else:
+                await say_stuff(message, 1)
+                await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+                return
+
+        for response, pattern in triggers.items():
+            if re.search(pattern, text):
+                await message.answer(response)
+                break
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
     await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
