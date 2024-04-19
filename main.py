@@ -39,14 +39,20 @@ dp = Dispatcher()
 async def on_startup():
     ids = await get_chat_ids()
     for chat_id in ids:
-        await bot.send_message(chat_id=chat_id, text="Hii im back")
+        try:
+            await bot.send_message(chat_id=chat_id, text="Hii im back")
+        except:
+            pass
 
 
 @dp.shutdown()
 async def on_shutdown():
     ids = await get_chat_ids()
     for chat_id in ids:
-        await bot.send_message(chat_id=chat_id, text="Im outta here")
+        try:
+            await bot.send_message(chat_id=chat_id, text="Im outta here")
+        except:
+            pass
     await close()
 
 
