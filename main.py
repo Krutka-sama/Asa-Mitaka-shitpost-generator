@@ -35,24 +35,24 @@ SETTINGS = {0: [SIZE_LAT, CHANCE, CHANCE_STICKER,
 dp = Dispatcher()
 
 
-@dp.startup()
-async def on_startup():
-    ids = await get_chat_ids()
-    for chat_id in ids:
-        try:
-            await bot.send_message(chat_id=chat_id, text="Hii im back")
-        except:
-            pass
+# @dp.startup()
+# async def on_startup():
+#     ids = await get_chat_ids()
+#     for chat_id in ids:
+#         try:
+#             await bot.send_message(chat_id=chat_id, text="Hii im back")
+#         except:
+#             pass
 
 
 @dp.shutdown()
 async def on_shutdown():
-    ids = await get_chat_ids()
-    for chat_id in ids:
-        try:
-            await bot.send_message(chat_id=chat_id, text="Im outta here")
-        except:
-            pass
+    # ids = await get_chat_ids()
+    # for chat_id in ids:
+    #     try:
+    #         await bot.send_message(chat_id=chat_id, text="Im outta here")
+    #     except:
+    #         pass
     await close()
 
 
@@ -201,8 +201,7 @@ async def command_start_handler(message: types.Message):
                          f"Say chance in [0.0;0.5]\n"
                          f"Skip chance in [0.0;1.0]\n\n"
                          f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!\n\n"
-                         f"I (currently) dont encrypt your data so copy&modify me and host by yourself if you care about your privacy!!!\n"
-                         f"If you need any help or have a suggestion dm my creator @krutka_sama")
+                         f"I (currently) dont encrypt your data so copy&modify me and host by yourself if you care about your privacy!!!")
 
 
 @dp.message(Command("Asa_shitpost"))
@@ -337,9 +336,9 @@ async def asa_ban(message: types.Message):
                 chat_id = message.chat.id
         await ban(chat_id)
         BLACK_LIST = await get_banned()
-        await message.answer("Frick you")
+        await message.answer(f"Frick you, {chat_id}")
     else:
-        await message.answer("No way")
+        await message.answer(f"No way")
 
 
 @dp.message(Command("Asa_unban"))
@@ -355,7 +354,7 @@ async def asa_unban(message: types.Message):
         if chat_id in BLACK_LIST:
             await unban(chat_id)
             BLACK_LIST = await get_banned()
-            await message.answer("Hii")
+            await message.answer(f"Hii, {chat_id}")
         else:
             await message.answer("???")
     else:
