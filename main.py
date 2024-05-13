@@ -2,15 +2,15 @@ import asyncio
 import logging
 import sys
 import re
-from random import random, shuffle, choice
-from aiogram.filters import Command
+from random import random, shuffle, choice, randint
+from aiogram.filters import Command, CommandStart
 from aiogram.types import BufferedInputFile
 # from aiogram.types import FSInputFile
 from decouple import config
 from aiogram import Bot, Dispatcher, types, F
 from database import create_table, connect, close, insert_message, insert_image, get_random_text, get_random_image, \
     delete_message, delete_image, delete_all_messages, delete_all_images, get_banned, ban, unban, get_all_settings, \
-    delete_settings, set_settings, get_chat_ids
+    delete_settings, set_settings
 from shitpost import shitpost
 from stuff import *
 from exeption import Banned
@@ -128,12 +128,13 @@ def blacklist_check(func):
 
 async def say_stuff(message: types.Message, chance: float):
     if random() <= chance:
-        text = await get_random_text(message.chat.id)
-        text2 = await get_random_text(message.chat.id)
-        if not text:
-            await message.answer("Fuck you")
-            return
-        text = text.split(" ") + text2.split(" ")
+        text = []
+        for _ in range(randint(1,5)):
+            t = await get_random_text(message.chat.id)
+            if not t:
+                await message.answer("Fuck you")
+                return
+            text += t.split(" ")
         shuffle(text)
         answer = ""
         for i in text:
@@ -142,6 +143,7 @@ async def say_stuff(message: types.Message, chance: float):
             answer += " "
             answer += i
         if answer:
+            #await insert_message(message.chat.id, answer)
             await message.answer(answer.capitalize())
         else:
             await post_femcel(message, 1)
@@ -178,7 +180,7 @@ async def post_femcel(message: types.Message, chance: float):
             pass
 
 
-@dp.message(Command("Asa_help"))
+@dp.message(CommandStart())
 @blacklist_check
 async def command_start_handler(message: types.Message):
     await message.answer(f"Hi, {message.from_user.full_name}, Im Asa Mitaka. Im autistic and I love shitposting!\n\n"
@@ -186,7 +188,7 @@ async def command_start_handler(message: types.Message):
                          f" you can also send me a pic directly or reply to one with the same command"
                          f" to create post with the pic you want, it works with text too!\n\n"
                          f"Use /Asa_delete_message and /Asa_delete_image"
-                         f" to get rid of unwanted pictures and signatures!\n"
+                         f" to get rid of unwanted pictures and signatures!\n\n"
                          f"Use /Asa_say to say something\n\n"
                          f"Use /Asa_settings to check your current settings\n"
                          f"Use /Asa_set_default to return to default settings\n"
@@ -212,13 +214,15 @@ async def asa_shitpost(message: types.Message):
             img = message.reply_to_message.photo[-1].file_id
         except:
             img = await get_random_image(message.chat.id)
-        text = message.text[13::]
+        text = message.text[40::]
         if not text:
-            text = message.reply_to_message.text
+            text = message.text[13::]
             if not text:
-                text = message.reply_to_message.caption
+                text = message.reply_to_message.text
                 if not text:
-                    text = await get_random_text(message.chat.id)
+                    text = message.reply_to_message.caption
+                    if not text:
+                        text = await get_random_text(message.chat.id)
     else:
         try:
             img = message.photo[-1].file_id
@@ -395,6 +399,22 @@ async def asa_set_default(message: types.Message):
 @blacklist_check
 async def asa_say(message: types.Message):
     await say_stuff(message, 1)
+
+
+@dp.message(Command("Asa_leave"))
+@blacklist_check
+async def asa_leave(message: types.Message):
+    if message.from_user.id == OWNER:
+        chat_id = message.text[11::]
+        if not chat_id:
+            chat_id = message.chat.id
+        try:
+            await message.answer("Bye losers")
+            await bot.leave_chat(chat_id)
+        except:
+            await message.answer("...wait a minute")
+    else:
+        await message.answer("No way")
 
 
 @dp.message(F.text)
