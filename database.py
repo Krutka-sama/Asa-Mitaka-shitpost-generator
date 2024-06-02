@@ -39,10 +39,18 @@ async def create_table():
                                chat_id INTEGER NOT NULL UNIQUE,
                                SIZE_LAT INTEGER NOT NULL,
                                CHANCE REAL NOT NULL,
-                               CHANCE_STICKER REAL NOT NULL,
-                               CHANCE_SAY REAL NOT NULL,
-                               CHANCE_SKIP REAL NOT NULL
+                               CHANCE_STICKER REAL NOT NULL
                            )''')
+
+    # cursor.execute('''CREATE TABLE IF NOT EXISTS settings (
+    #                            id INTEGER PRIMARY KEY,
+    #                            chat_id INTEGER NOT NULL UNIQUE,
+    #                            SIZE_LAT INTEGER NOT NULL,
+    #                            CHANCE REAL NOT NULL,
+    #                            CHANCE_STICKER REAL NOT NULL,
+    #                            CHANCE_SAY REAL NOT NULL,
+    #                            CHANCE_SKIP REAL NOT NULL
+    #                        )''')
 
 
 async def insert_message(chat_id: int, message: str, max_rows=M_SCOPE):
@@ -152,7 +160,7 @@ async def unban(chat_id: int):
 
 
 async def get_all_settings():
-    cursor.execute("SELECT chat_id, SIZE_LAT, CHANCE, CHANCE_STICKER, CHANCE_SAY, CHANCE_SKIP FROM settings")
+    cursor.execute("SELECT chat_id, SIZE_LAT, CHANCE, CHANCE_STICKER FROM settings")
     rows = cursor.fetchall()
     settings = {row[0]: row[1:] for row in rows}
     return settings
@@ -160,7 +168,7 @@ async def get_all_settings():
 
 async def set_settings(chat_id: int, data: list):
     cursor.execute(
-        "INSERT OR REPLACE INTO settings (chat_id, SIZE_LAT, CHANCE, CHANCE_STICKER, CHANCE_SAY, CHANCE_SKIP) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT OR REPLACE INTO settings (chat_id, SIZE_LAT, CHANCE, CHANCE_STICKER) VALUES (?, ?, ?, ?)",
         (chat_id, *data))
     cursor.connection.commit()
 

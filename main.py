@@ -16,6 +16,8 @@ from stuff import *
 from exeption import Banned
 from functools import wraps
 
+from characterai import aiocai
+
 # from aiogram.client.session.aiohttp import AiohttpSession
 # PROXY_URL = "http://proxy.server:3128"
 
@@ -25,12 +27,12 @@ OWNER = int(config('OWNER_ID'))
 SIZE_LAT = int(config('DEFAULT_SIZE_LAT'))
 CHANCE = float(config('DEFAULT_CHANCE'))
 CHANCE_STICKER = float(config('DEFAULT_CHANCE_STICKER'))
-CHANCE_SAY = float(config('DEFAULT_CHANCE_SAY'))
-CHANCE_SKIP = float(config('DEFAULT_CHANCE_SKIP_WORD'))
+
+asa = config('ASA_AI')
+client = aiocai.Client(config('TOKEN_AI'))
 
 BLACK_LIST: list[int] = []
-SETTINGS = {0: [SIZE_LAT, CHANCE, CHANCE_STICKER,
-                CHANCE_SAY, CHANCE_SKIP]}
+SETTINGS = {0: [SIZE_LAT, CHANCE, CHANCE_STICKER]}
 
 dp = Dispatcher()
 
@@ -63,21 +65,17 @@ async def validate_settings(message: types.Message) -> list | None:
     except ValueError:
         await message.answer("Bruh")
         return
-    if len(s) != 5:
+    if len(s) != 3:
         await message.answer("Invalid settings, moron")
         return
 
     s[0] = int(s[0])
     s[1] = round(s[1], 2)
     s[2] = round(s[2], 2)
-    s[3] = round(s[3], 2)
-    s[4] = round(s[4], 2)
 
     SIZE_LAT = s[0]
     CHANCE = s[1]
     CHANCE_STICKER = s[2]
-    CHANCE_SAY = s[3]
-    CHANCE_SKIP = s[4]
 
     if SIZE_LAT > 100 or SIZE_LAT < 10:
         await message.answer("Invalid size")
@@ -90,23 +88,13 @@ async def validate_settings(message: types.Message) -> list | None:
     if CHANCE_STICKER > 0.8 or CHANCE_STICKER < 0:
         await message.answer("Invalid chance to send sticker")
         return
-
-    if CHANCE_SAY > 0.5 or CHANCE_SAY < 0:
-        await message.answer("Invalid chance to say something")
-        return
-
-    if CHANCE_SKIP > 1 or CHANCE_SKIP < 0:
-        await message.answer("Invalid chance to skip word")
-        return
     return s
 
 
 def format_settings(s: list) -> str:
     return (f"Latin text size {s[0]}\n"
             f"Chance to post {s[1]}\n"
-            f"Chance to send sticker {s[2]}\n"
-            f"Chance to say something {s[3]}\n"
-            f"Chance to skip word when saying something {s[4]}")
+            f"Chance to send sticker {s[2]}\n")
 
 
 def black_list(message: types.Message):
@@ -126,27 +114,27 @@ def blacklist_check(func):
     return wrapper
 
 
-async def say_stuff(message: types.Message, chance: float):
-    if random() <= chance:
-        text = []
-        for _ in range(randint(1, 5)):
-            t = await get_random_text(message.chat.id)
-            if not t:
-                await message.answer("Fuck you")
-                return
-            text += t.split(" ")
-        shuffle(text)
-        answer = ""
-        for i in text:
-            if random() <= SETTINGS.get(message.chat.id, SETTINGS.get(0))[4]:
-                continue
-            answer += " "
-            answer += i
-        if answer:
-            # await insert_message(message.chat.id, answer)
-            await message.answer(answer.capitalize())
-        else:
-            await post_femcel(message, 1)
+# async def say_stuff(message: types.Message, chance: float):
+#     if random() <= chance:
+#         text = []
+#         for _ in range(randint(1, 5)):
+#             t = await get_random_text(message.chat.id)
+#             if not t:
+#                 await message.answer("Fuck you")
+#                 return
+#             text += t.split(" ")
+#         shuffle(text)
+#         answer = ""
+#         for i in text:
+#             if random() <= SETTINGS.get(message.chat.id, SETTINGS.get(0))[4]:
+#                 continue
+#             answer += " "
+#             answer += i
+#         if answer:
+#             # await insert_message(message.chat.id, answer)
+#             await message.answer(answer.capitalize())
+#         else:
+#             await post_femcel(message, 1)
 
 
 async def post_random(message: types.Message, chance: float):
@@ -180,6 +168,22 @@ async def post_femcel(message: types.Message, chance: float):
             pass
 
 
+async def ai_response(user_message):
+    async with await client.connect() as chat:
+        response = await chat.send_message(asa, new.chat_id, user_message)
+        return response.text
+
+
+@dp.message(Command("asa"))
+@blacklist_check
+async def handle_ai_request(message):
+    user_message = message.text.split(maxsplit=1)[1]
+    user = message.from_user.full_name
+    m = user + ": " + user_message
+    response_text = await ai_response(m)
+    await message.answer(response_text)
+
+
 @dp.message(CommandStart())
 @blacklist_check
 async def command_start_handler(message: types.Message):
@@ -189,19 +193,16 @@ async def command_start_handler(message: types.Message):
                          f" to create post with the pic you want, it works with text too!\n\n"
                          f"Use /asa_delete_message and /asa_delete_image"
                          f" to get rid of unwanted pictures and signatures!\n\n"
-                         f"Use /asa_say to say something\n\n"
+                         f"Use /asa to chat\n\n"
                          f"Use /asa_settings to check your current settings\n"
                          f"Use /asa_set_default to return to default settings\n"
                          f"Use /asa_set_settings to change settings, use the example:\n"
-                         f"/asa_set_settings 60 0.1 0.05 0.01 0.4\n"
-                         f"This will make latin text size 60, chance to post 10%, chance to send sticker 5%, "
-                         f"chance to say something 1% and chance to skip word when saying something 40%\n"
-                         f"You must provide 5 numbers and:\n"
+                         f"/asa_set_settings 60 0.1 0.05\n"
+                         f"This will make latin text size 60, chance to post 10%, chance to send sticker 5%"
+                         f"You must provide 3 numbers and:\n"
                          f"Text size must in (10;100)\n"
                          f"Post chance in [0.0;0.8]\n"
-                         f"Sticker chance in [0.0;0.8]\n"
-                         f"Say chance in [0.0;0.5]\n"
-                         f"Skip chance in [0.0;1.0]\n\n"
+                         f"Sticker chance in [0.0;0.8]\n\n"
                          f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!\n\n"
                          f"I (currently) dont encrypt your data so copy&modify me and host by yourself if you care about your privacy!!!")
 
@@ -215,7 +216,7 @@ async def asa_shitpost(message: types.Message):
         except:
             img = await get_random_image(message.chat.id)
         try:
-            text=message.text.split(maxsplit=1)[1]
+            text = message.text.split(maxsplit=1)[1]
         except:
             try:
                 text = message.reply_to_message.text
@@ -388,10 +389,10 @@ async def asa_set_default(message: types.Message):
         await message.answer("Your settings are default, idiot")
 
 
-@dp.message(Command("asa_say"))
-@blacklist_check
-async def asa_say(message: types.Message):
-    await say_stuff(message, 1)
+# @dp.message(Command("asa_say"))
+# @blacklist_check
+# async def asa_say(message: types.Message):
+#     await say_stuff(message, 1)
 
 
 @dp.message(Command("asa_leave"))
@@ -428,7 +429,7 @@ async def echo_handler(message: types.Message) -> None:
             await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
             return
         else:
-            await say_stuff(message, 1)
+            #await say_stuff(message, 1)
             await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
             return
 
@@ -438,7 +439,7 @@ async def echo_handler(message: types.Message) -> None:
             break
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
 
-    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
 
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
@@ -458,7 +459,7 @@ async def echo_photo(message: types.Message) -> None:
         pass
     if text: await insert_message(message.chat.id, text.lower())
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
@@ -467,7 +468,7 @@ async def echo_photo(message: types.Message) -> None:
 async def echo_sticker(message: types.Message) -> None:
     await message.send_copy(chat_id=message.chat.id)
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
@@ -500,7 +501,7 @@ async def echo_any(message: types.Message):
                 await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
                 return
             else:
-                await say_stuff(message, 1)
+                #await say_stuff(message, 1)
                 await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
                 return
 
@@ -509,17 +510,18 @@ async def echo_any(message: types.Message):
                 await message.answer(response)
                 break
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-    await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
+    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
 async def main() -> None:
-    global bot, BLACK_LIST, SETTINGS
+    global bot, BLACK_LIST, SETTINGS, new
     bot = Bot(TOKEN)
-
     # session = AiohttpSession(proxy=PROXY_URL)
     # bot = Bot(TOKEN, session=session)
-
+    me = await client.get_me()
+    async with await client.connect() as chat:
+        new, answer = await chat.new_chat(asa, me.id)
     await connect(NAME)
     await create_table()
     BLACK_LIST = await get_banned()
