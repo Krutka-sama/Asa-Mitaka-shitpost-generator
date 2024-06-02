@@ -57,9 +57,9 @@ async def on_shutdown():
 
 
 async def validate_settings(message: types.Message) -> list | None:
-    s = message.text
+    s = message.text.split(maxsplit=1)[1]
     try:
-        s = list(map(float, s[18::].split(" ")))
+        s = list(map(float, s.split(" ")))
     except ValueError:
         await message.answer("Bruh")
         return
@@ -129,7 +129,7 @@ def blacklist_check(func):
 async def say_stuff(message: types.Message, chance: float):
     if random() <= chance:
         text = []
-        for _ in range(randint(1,5)):
+        for _ in range(randint(1, 5)):
             t = await get_random_text(message.chat.id)
             if not t:
                 await message.answer("Fuck you")
@@ -143,7 +143,7 @@ async def say_stuff(message: types.Message, chance: float):
             answer += " "
             answer += i
         if answer:
-            #await insert_message(message.chat.id, answer)
+            # await insert_message(message.chat.id, answer)
             await message.answer(answer.capitalize())
         else:
             await post_femcel(message, 1)
@@ -184,16 +184,16 @@ async def post_femcel(message: types.Message, chance: float):
 @blacklist_check
 async def command_start_handler(message: types.Message):
     await message.answer(f"Hi, {message.from_user.full_name}, Im Asa Mitaka. Im autistic and I love shitposting!\n\n"
-                         f"Use /Asa_shitpost to create a shitpost from last random 100 messages and pics,"
+                         f"Use /asa_shitpost to create a shitpost from last random 100 messages and pics,"
                          f" you can also send me a pic directly or reply to one with the same command"
                          f" to create post with the pic you want, it works with text too!\n\n"
-                         f"Use /Asa_delete_message and /Asa_delete_image"
+                         f"Use /asa_delete_message and /asa_delete_image"
                          f" to get rid of unwanted pictures and signatures!\n\n"
-                         f"Use /Asa_say to say something\n\n"
-                         f"Use /Asa_settings to check your current settings\n"
-                         f"Use /Asa_set_default to return to default settings\n"
-                         f"Use /Asa_set_settings to change settings, use the example:\n"
-                         f"/Asa_set_settings 60 0.1 0.05 0.01 0.4\n"
+                         f"Use /asa_say to say something\n\n"
+                         f"Use /asa_settings to check your current settings\n"
+                         f"Use /asa_set_default to return to default settings\n"
+                         f"Use /asa_set_settings to change settings, use the example:\n"
+                         f"/asa_set_settings 60 0.1 0.05 0.01 0.4\n"
                          f"This will make latin text size 60, chance to post 10%, chance to send sticker 5%, "
                          f"chance to say something 1% and chance to skip word when saying something 40%\n"
                          f"You must provide 5 numbers and:\n"
@@ -206,7 +206,7 @@ async def command_start_handler(message: types.Message):
                          f"I (currently) dont encrypt your data so copy&modify me and host by yourself if you care about your privacy!!!")
 
 
-@dp.message(Command("Asa_shitpost"))
+@dp.message(Command("asa_shitpost"))
 @blacklist_check
 async def asa_shitpost(message: types.Message):
     if message.reply_to_message:
@@ -214,33 +214,29 @@ async def asa_shitpost(message: types.Message):
             img = message.reply_to_message.photo[-1].file_id
         except:
             img = await get_random_image(message.chat.id)
-        text = message.text[40::]
-        if not text:
-            text = message.text[13::]
-            if not text:
+        try:
+            text=message.text.split(maxsplit=1)[1]
+        except:
+            try:
                 text = message.reply_to_message.text
-                if not text:
+            except:
+                try:
                     text = message.reply_to_message.caption
-                    if not text:
-                        text = await get_random_text(message.chat.id)
+                except:
+                    text = await get_random_text(message.chat.id)
     else:
         try:
             img = message.photo[-1].file_id
         except:
             img = await get_random_image(message.chat.id)
         try:
-            text = message.caption[13::]
-            if not text:
-                try:
-                    text = message.text[13::]
-                    if not text:
-                        text = await get_random_text(message.chat.id)
-                except:
-                    text = await get_random_text(message.chat.id)
+            text = message.caption.split(maxsplit=1)[1]
         except:
-            text = message.text[13::]
-            if not text:
+            try:
+                text = message.text.split(maxsplit=1)[1]
+            except:
                 text = await get_random_text(message.chat.id)
+    print(text)
     if not text or not img:
         await message.answer("Nah")
         return
@@ -252,12 +248,13 @@ async def asa_shitpost(message: types.Message):
     modified_image_buffer.truncate(0)
 
 
-@dp.message(Command("Asa_delete_message"))
+@dp.message(Command("asa_delete_message"))
 @blacklist_check
 async def asa_delete_message(message: types.Message):
     if message.reply_to_message:
-        text = message.text[20::]
-        if not text:
+        try:
+            text = message.text.split(maxsplit=1)[1]
+        except:
             text = message.reply_to_message.text
             if not text:
                 text = message.reply_to_message.caption
@@ -265,17 +262,11 @@ async def asa_delete_message(message: types.Message):
                     text = None
     else:
         try:
-            text = message.caption[20::]
-            if not text:
-                try:
-                    text = message.text[20::]
-                    if not text:
-                        text = None
-                except:
-                    text = None
+            text = message.caption.split(maxsplit=1)[1]
         except:
-            text = message.text[20::]
-            if not text:
+            try:
+                text = message.text.split(maxsplit=1)[1]
+            except:
                 text = None
     if text:
         if await delete_message(message.chat.id, text):
@@ -286,7 +277,7 @@ async def asa_delete_message(message: types.Message):
         await message.answer("???")
 
 
-@dp.message(Command("Asa_delete_image"))
+@dp.message(Command("asa_delete_image"))
 @blacklist_check
 async def asa_delete_image(message: types.Message):
     if message.reply_to_message:
@@ -308,7 +299,7 @@ async def asa_delete_image(message: types.Message):
         await message.answer("???")
 
 
-@dp.message(Command("Asa_delete_all_messages"))
+@dp.message(Command("asa_delete_all_messages"))
 async def asa_delete_all_messages(message: types.Message):
     if message.from_user.id == OWNER:
         await post_femcel(message, 1)
@@ -318,7 +309,7 @@ async def asa_delete_all_messages(message: types.Message):
         await message.answer("No way")
 
 
-@dp.message(Command("Asa_delete_all_images"))
+@dp.message(Command("asa_delete_all_images"))
 async def asa_delete_all_images(message: types.Message):
     if message.from_user.id == OWNER:
         await post_femcel(message, 1)
@@ -328,12 +319,13 @@ async def asa_delete_all_images(message: types.Message):
         await message.answer("No way")
 
 
-@dp.message(Command("Asa_ban"))
+@dp.message(Command("asa_ban"))
 async def asa_ban(message: types.Message):
     global BLACK_LIST
     if message.from_user.id == OWNER:
-        chat_id = message.text[9::]
-        if not chat_id:
+        try:
+            chat_id = int(message.text.split(maxsplit=1)[1])
+        except:
             try:
                 chat_id = message.reply_to_message.from_user.id
             except:
@@ -345,12 +337,13 @@ async def asa_ban(message: types.Message):
         await message.answer(f"No way")
 
 
-@dp.message(Command("Asa_unban"))
+@dp.message(Command("asa_unban"))
 async def asa_unban(message: types.Message):
     global BLACK_LIST
     if message.from_user.id == OWNER:
-        chat_id = message.text[11::]
-        if not chat_id:
+        try:
+            chat_id = int(message.text.split(maxsplit=1)[1])
+        except:
             try:
                 chat_id = message.reply_to_message.from_user.id
             except:
@@ -365,14 +358,14 @@ async def asa_unban(message: types.Message):
         await message.answer("No way")
 
 
-@dp.message(Command("Asa_settings"))
+@dp.message(Command("asa_settings"))
 @blacklist_check
 async def asa_settings(message: types.Message):
     await message.answer(
         f"Current settings for {message.chat.id}:\n" + format_settings(SETTINGS.get(message.chat.id, SETTINGS.get(0))))
 
 
-@dp.message(Command("Asa_set_settings"))
+@dp.message(Command("asa_set_settings"))
 @blacklist_check
 async def asa_set_settings(message: types.Message):
     settings = await validate_settings(message)
@@ -384,7 +377,7 @@ async def asa_set_settings(message: types.Message):
         return
 
 
-@dp.message(Command("Asa_set_default"))
+@dp.message(Command("asa_set_default"))
 @blacklist_check
 async def asa_set_default(message: types.Message):
     try:
@@ -395,18 +388,19 @@ async def asa_set_default(message: types.Message):
         await message.answer("Your settings are default, idiot")
 
 
-@dp.message(Command("Asa_say"))
+@dp.message(Command("asa_say"))
 @blacklist_check
 async def asa_say(message: types.Message):
     await say_stuff(message, 1)
 
 
-@dp.message(Command("Asa_leave"))
+@dp.message(Command("asa_leave"))
 @blacklist_check
 async def asa_leave(message: types.Message):
     if message.from_user.id == OWNER:
-        chat_id = message.text[11::]
-        if not chat_id:
+        try:
+            chat_id = message.text.split(maxsplit=1)[1]
+        except:
             chat_id = message.chat.id
         try:
             await message.answer("Bye losers")
@@ -424,10 +418,10 @@ async def echo_handler(message: types.Message) -> None:
     await insert_message(message.chat.id, text)
     if re.search(r"\b(?:f+e+m+?.?c+e+l+\w*|ф+е+м+?.?ц+е+л+\w*|a+s+a+?.?|а+с+?.?|а+с+а+|m+i+t+a+k+?.?|м+и+т+а+к+?.?)\b",
                  text):
-        #await insert_message(message.chat.id, text)
-        #await post_femcel(message, 1)
-        #await post_random(message, CHANCE)
-        #return
+        # await insert_message(message.chat.id, text)
+        # await post_femcel(message, 1)
+        # await post_random(message, CHANCE)
+        # return
 
         if random() <= 0.9:
             await post_femcel(message, 1)
