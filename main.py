@@ -177,9 +177,12 @@ async def ai_response(user_message):
 @dp.message(Command("asa"))
 @blacklist_check
 async def handle_ai_request(message):
-    user_message = message.text.split(maxsplit=1)[1]
-    user = message.from_user.full_name
-    m = user + ": " + user_message
+    try:
+        user_message = message.text.split(maxsplit=1)[1]
+        user = message.from_user.full_name
+        m = user + ": " + user_message
+    except:
+        m=""
     response_text = await ai_response(m)
     await message.answer(response_text)
 
