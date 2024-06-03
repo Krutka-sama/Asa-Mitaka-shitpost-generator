@@ -42,16 +42,6 @@ async def create_table():
                                CHANCE_STICKER REAL NOT NULL
                            )''')
 
-    # cursor.execute('''CREATE TABLE IF NOT EXISTS settings (
-    #                            id INTEGER PRIMARY KEY,
-    #                            chat_id INTEGER NOT NULL UNIQUE,
-    #                            SIZE_LAT INTEGER NOT NULL,
-    #                            CHANCE REAL NOT NULL,
-    #                            CHANCE_STICKER REAL NOT NULL,
-    #                            CHANCE_SAY REAL NOT NULL,
-    #                            CHANCE_SKIP REAL NOT NULL
-    #                        )''')
-
 
 async def insert_message(chat_id: int, message: str, max_rows=M_SCOPE):
     message = replace_emoji(message, "")

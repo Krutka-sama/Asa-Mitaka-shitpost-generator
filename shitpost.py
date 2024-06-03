@@ -78,7 +78,6 @@ async def shitpost_impact(text: str, image_data):
 
 
 async def shitpost_pinterst(text, image_data, size: int):
-    # img = Image.open(file_path)
     img = Image.open(image_data)
     width, height = img.size
     text_width = width * 0.8
@@ -110,7 +109,6 @@ async def shitpost_pinterst(text, image_data, size: int):
             size -= 5
     draw.multiline_text((width / 2 - w / 2 - x1, height / 2 - h / 2 - y1), quote, font=font, align="center",
                         stroke_width=3, stroke_fill="#000")
-    # img.save(file_path, format="PNG")
 
     img_buffer = io.BytesIO()
     img.save(img_buffer, format="PNG")

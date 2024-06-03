@@ -2,10 +2,9 @@ import asyncio
 import logging
 import sys
 import re
-from random import random, shuffle, choice, randint
+from random import random, choice
 from aiogram.filters import Command, CommandStart
 from aiogram.types import BufferedInputFile
-# from aiogram.types import FSInputFile
 from decouple import config
 from aiogram import Bot, Dispatcher, types, F
 from database import create_table, connect, close, insert_message, insert_image, get_random_text, get_random_image, \
@@ -15,11 +14,8 @@ from shitpost import shitpost
 from stuff import *
 from exeption import Banned
 from functools import wraps
-
 from characterai import aiocai
 
-# from aiogram.client.session.aiohttp import AiohttpSession
-# PROXY_URL = "http://proxy.server:3128"
 
 TOKEN = config('BOT_TOKEN')
 NAME = config('DB_NAME')
@@ -37,25 +33,8 @@ SETTINGS = {0: [SIZE_LAT, CHANCE, CHANCE_STICKER]}
 dp = Dispatcher()
 
 
-# @dp.startup()
-# async def on_startup():
-#     ids = await get_chat_ids()
-#     for chat_id in ids:
-#         try:
-#             await bot.send_message(chat_id=chat_id, text="Hii im back")
-#         except:
-#             pass
-
-
 @dp.shutdown()
-async def on_shutdown():
-    # ids = await get_chat_ids()
-    # for chat_id in ids:
-    #     try:
-    #         await bot.send_message(chat_id=chat_id, text="Im outta here")
-    #     except:
-    #         pass
-    await close()
+async def on_shutdown(): await close()
 
 
 async def validate_settings(message: types.Message) -> list | None:
@@ -114,29 +93,6 @@ def blacklist_check(func):
     return wrapper
 
 
-# async def say_stuff(message: types.Message, chance: float):
-#     if random() <= chance:
-#         text = []
-#         for _ in range(randint(1, 5)):
-#             t = await get_random_text(message.chat.id)
-#             if not t:
-#                 await message.answer("Fuck you")
-#                 return
-#             text += t.split(" ")
-#         shuffle(text)
-#         answer = ""
-#         for i in text:
-#             if random() <= SETTINGS.get(message.chat.id, SETTINGS.get(0))[4]:
-#                 continue
-#             answer += " "
-#             answer += i
-#         if answer:
-#             # await insert_message(message.chat.id, answer)
-#             await message.answer(answer.capitalize())
-#         else:
-#             await post_femcel(message, 1)
-
-
 async def post_random(message: types.Message, chance: float):
     if random() <= chance:
         file_id = await get_random_image(message.chat.id)
@@ -145,14 +101,6 @@ async def post_random(message: types.Message, chance: float):
             await message.answer("Dumbass")
             return
         file_info = await bot.get_file(file_id)
-
-        # path = "img/" + str(message.chat.id) + ".png"
-        # await bot.download_file(file_info.file_path, path)
-        # await shitpost(text, path)
-        # photo = FSInputFile(path)
-        # await message.answer_photo(photo)
-
-        # I have no idea how to use streams in python so this is probably trash garbage shit curse death
         image_data = await bot.download_file(file_info.file_path)
         modified_image_buffer = await shitpost(text, image_data, SETTINGS.get(message.chat.id, SETTINGS.get(0))[0])
         img = BufferedInputFile(modified_image_buffer.getvalue(), "shitpost")
@@ -162,10 +110,8 @@ async def post_random(message: types.Message, chance: float):
 
 async def post_femcel(message: types.Message, chance: float):
     if random() <= chance:
-        try:
-            await message.answer_sticker(choice(femcel))
-        except:
-            pass
+        try: await message.answer_sticker(choice(femcel))
+        except: pass
 
 
 async def ai_response(user_message):
@@ -392,12 +338,6 @@ async def asa_set_default(message: types.Message):
         await message.answer("Your settings are default, idiot")
 
 
-# @dp.message(Command("asa_say"))
-# @blacklist_check
-# async def asa_say(message: types.Message):
-#     await say_stuff(message, 1)
-
-
 @dp.message(Command("asa_leave"))
 @blacklist_check
 async def asa_leave(message: types.Message):
@@ -422,28 +362,16 @@ async def echo_handler(message: types.Message) -> None:
     await insert_message(message.chat.id, text)
     if re.search(r"\b(?:f+e+m+?.?c+e+l+\w*|ф+е+м+?.?ц+е+л+\w*|a+s+a+?.?|а+с+?.?|а+с+а+|m+i+t+a+k+?.?|м+и+т+а+к+?.?)\b",
                  text):
-        # await insert_message(message.chat.id, text)
-        # await post_femcel(message, 1)
-        # await post_random(message, CHANCE)
-        # return
-
-        if random() <= 0.9:
-            await post_femcel(message, 1)
-            await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-            return
-        else:
-            #await say_stuff(message, 1)
-            await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-            return
+        await post_femcel(message, 1)
+        await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+        return
 
     for response, pattern in triggers.items():
         if re.search(pattern, text):
             await message.answer(response)
             break
+
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-
-    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
-
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
@@ -471,7 +399,6 @@ async def echo_photo(message: types.Message) -> None:
 async def echo_sticker(message: types.Message) -> None:
     await message.send_copy(chat_id=message.chat.id)
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
@@ -494,34 +421,22 @@ async def echo_any(message: types.Message):
         if re.search(
                 r"\b(?:f+e+m+?.?c+e+l+\w*|ф+е+м+?.?ц+е+л+\w*|a+s+a+?.?|а+с+?.?|а+с+а+|m+i+t+a+k+?.?|м+и+т+а+к+?.?)\b",
                 text):
-            # await insert_message(message.chat.id, text)
-            # await post_femcel(message, 1)
-            # await post_random(message, CHANCE)
-            # return
-
-            if random() <= 0.9:
-                await post_femcel(message, 1)
-                await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-                return
-            else:
-                #await say_stuff(message, 1)
-                await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-                return
+            await post_femcel(message, 1)
+            await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
+            return
 
         for response, pattern in triggers.items():
             if re.search(pattern, text):
                 await message.answer(response)
                 break
+
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
 async def main() -> None:
     global bot, BLACK_LIST, SETTINGS, new
     bot = Bot(TOKEN)
-    # session = AiohttpSession(proxy=PROXY_URL)
-    # bot = Bot(TOKEN, session=session)
     me = await client.get_me()
     async with await client.connect() as chat:
         new, answer = await chat.new_chat(asa, me.id)
