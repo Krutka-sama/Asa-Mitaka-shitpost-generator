@@ -496,7 +496,7 @@ async def main() -> None:
     await connect(NAME)
     await create_table()
     BLACK_LIST = await get_banned()
-    SETTINGS = await get_all_settings()
+    SETTINGS |= await get_all_settings()
     AI_USERS = await get_ai_users()
     await dp.start_polling(bot)
 
