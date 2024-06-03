@@ -42,6 +42,12 @@ async def create_table():
                                CHANCE_STICKER REAL NOT NULL
                            )''')
 
+    cursor.execute('''CREATE TABLE IF NOT EXISTS ai (
+                               id INTEGER PRIMARY KEY,
+                               chat_id INTEGER NOT NULL UNIQUE,
+                               ai_id INTEGER NOT NULL UNIQUE
+                            )''')
+
 
 async def insert_message(chat_id: int, message: str, max_rows=M_SCOPE):
     message = replace_emoji(message, "")
@@ -173,3 +179,22 @@ async def get_chat_ids():
     rows = cursor.fetchall()
     chat_ids = [row[0] for row in rows]
     return chat_ids
+
+
+async def get_ai_users():
+    cursor.execute("SELECT chat_id, ai_id FROM ai")
+    rows = cursor.fetchall()
+    ais = {row[0]: row[1] for row in rows}
+    return ais
+
+
+async def add_ai_user(chat_id: int, ai_id: int):
+    cursor.execute(
+        "INSERT OR REPLACE INTO ai (chat_id, ai_id) VALUES (?, ?)",
+        (chat_id, ai_id))
+    cursor.connection.commit()
+
+
+async def remove_ai_user(chat_id: int):
+    cursor.execute("DELETE FROM ai WHERE chat_id=?", (chat_id,))
+    cursor.connection.commit()

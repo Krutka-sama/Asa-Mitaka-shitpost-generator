@@ -9,13 +9,12 @@ from decouple import config
 from aiogram import Bot, Dispatcher, types, F
 from database import create_table, connect, close, insert_message, insert_image, get_random_text, get_random_image, \
     delete_message, delete_image, delete_all_messages, delete_all_images, get_banned, ban, unban, get_all_settings, \
-    delete_settings, set_settings
+    delete_settings, set_settings, get_ai_users, add_ai_user, remove_ai_user, M_SCOPE, I_SCOPE
 from shitpost import shitpost
 from stuff import *
 from exeption import Banned
 from functools import wraps
 from characterai import aiocai
-
 
 TOKEN = config('BOT_TOKEN')
 NAME = config('DB_NAME')
@@ -29,7 +28,7 @@ client = aiocai.Client(config('TOKEN_AI'))
 
 BLACK_LIST: list[int] = []
 SETTINGS = {0: [SIZE_LAT, CHANCE, CHANCE_STICKER]}
-
+AI_USERS = {}
 dp = Dispatcher()
 
 
@@ -110,34 +109,23 @@ async def post_random(message: types.Message, chance: float):
 
 async def post_femcel(message: types.Message, chance: float):
     if random() <= chance:
-        try: await message.answer_sticker(choice(femcel))
-        except: pass
+        try:
+            await message.answer_sticker(choice(femcel))
+        except:
+            pass
 
 
-async def ai_response(user_message):
+async def ai_response(user_message: str, chat_id: int):
     async with await client.connect() as chat:
-        response = await chat.send_message(asa, new.chat_id, user_message)
+        response = await chat.send_message(asa, AI_USERS[chat_id], user_message)
         return response.text
-
-
-@dp.message(Command("asa"))
-@blacklist_check
-async def handle_ai_request(message):
-    try:
-        user_message = message.text.split(maxsplit=1)[1]
-        user = message.from_user.full_name
-        m = user + ": " + user_message
-    except:
-        m=""
-    response_text = await ai_response(m)
-    await message.answer(response_text)
 
 
 @dp.message(CommandStart())
 @blacklist_check
 async def command_start_handler(message: types.Message):
     await message.answer(f"Hi, {message.from_user.full_name}, Im Asa Mitaka. Im autistic and I love shitposting!\n\n"
-                         f"Use /asa_shitpost to create a shitpost from last random 100 messages and pics,"
+                         f"Use /asa_shitpost to create a shitpost from last random {M_SCOPE} messages and {I_SCOPE} pics,"
                          f" you can also send me a pic directly or reply to one with the same command"
                          f" to create post with the pic you want, it works with text too!\n\n"
                          f"Use /asa_delete_message and /asa_delete_image"
@@ -147,13 +135,82 @@ async def command_start_handler(message: types.Message):
                          f"Use /asa_set_default to return to default settings\n"
                          f"Use /asa_set_settings to change settings, use the example:\n"
                          f"/asa_set_settings 60 0.1 0.05\n"
-                         f"This will make latin text size 60, chance to post 10%, chance to send sticker 5%"
+                         f"This will make latin text size 60, chance to post 10%, chance to send sticker 5%\n"
                          f"You must provide 3 numbers and:\n"
                          f"Text size must in (10;100)\n"
                          f"Post chance in [0.0;0.8]\n"
                          f"Sticker chance in [0.0;0.8]\n\n"
                          f"I work only with latin and cyrillic characters!!! And i wont display emoji!!!\n\n"
-                         f"I (currently) dont encrypt your data so copy&modify me and host by yourself if you care about your privacy!!!")
+                         f"By continuing using me you agree that you are fine that your privacy depends on online hosting Im currently using")
+
+
+@dp.message(Command("asa"))
+@blacklist_check
+async def handle_ai_request(message):
+    global AI_USERS
+    if not (message.chat.id in AI_USERS):
+        me = await client.get_me()
+        async with await client.connect() as chat:
+            new, answer = await chat.new_chat(asa, me.id)
+            await add_ai_user(message.chat.id, new.chat_id)
+            AI_USERS = await get_ai_users()
+    if message.reply_to_message:
+        user = message.reply_to_message.from_user.full_name
+        try:
+            user_message = message.reply_to_message.text
+        except:
+            try:
+                user_message = message.reply_to_message.caption
+            except:
+                user_message = None
+    else:
+        user = message.from_user.full_name
+        try:
+            user_message = message.caption.split(maxsplit=1)[1]
+        except:
+            try:
+                user_message = message.text.split(maxsplit=1)[1]
+            except:
+                user_message = None
+    if user_message:
+        m = user + ": " + user_message
+    else:
+        m = ""
+    response_text = await ai_response(m, message.chat.id)
+    await message.answer(response_text)
+
+
+@dp.message(Command("asa_forget"))
+@blacklist_check
+async def asa_forget(message: types.Message):
+    global AI_USERS
+    if message.from_user.id == OWNER:
+        try:
+            chat_id = int(message.text.split(maxsplit=1)[1])
+        except:
+            try:
+                chat_id = message.reply_to_message.from_user.id
+            except:
+                chat_id = message.chat.id
+        await remove_ai_user(chat_id)
+        AI_USERS = await get_ai_users()
+        await message.answer(f"Uhh whos {chat_id} again?")
+    else:
+        await message.answer(f"No way")
+
+
+@dp.message(Command("asa_id"))
+@blacklist_check
+async def asa_get_id(message: types.Message):
+    if message.from_user.id == OWNER:
+        try:
+            chat_id = int(message.text.split(maxsplit=1)[1])
+        except:
+            try:
+                chat_id = message.reply_to_message.from_user.id
+            except:
+                chat_id = message.chat.id
+        await message.answer(f"{chat_id}")
 
 
 @dp.message(Command("asa_shitpost"))
@@ -390,7 +447,6 @@ async def echo_photo(message: types.Message) -> None:
         pass
     if text: await insert_message(message.chat.id, text.lower())
     await post_random(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[1])
-    #await say_stuff(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[3])
     await post_femcel(message, SETTINGS.get(message.chat.id, SETTINGS.get(0))[2])
 
 
@@ -435,15 +491,13 @@ async def echo_any(message: types.Message):
 
 
 async def main() -> None:
-    global bot, BLACK_LIST, SETTINGS, new
+    global bot, BLACK_LIST, SETTINGS, AI_USERS
     bot = Bot(TOKEN)
-    me = await client.get_me()
-    async with await client.connect() as chat:
-        new, answer = await chat.new_chat(asa, me.id)
     await connect(NAME)
     await create_table()
     BLACK_LIST = await get_banned()
-    SETTINGS |= await get_all_settings()
+    SETTINGS = await get_all_settings()
+    AI_USERS = await get_ai_users()
     await dp.start_polling(bot)
 
 
