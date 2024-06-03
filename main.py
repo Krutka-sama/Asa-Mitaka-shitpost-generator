@@ -192,11 +192,12 @@ async def asa_forget(message: types.Message):
                 chat_id = message.reply_to_message.from_user.id
             except:
                 chat_id = message.chat.id
-        await remove_ai_user(chat_id)
-        AI_USERS = await get_ai_users()
-        await message.answer(f"Uhh whos {chat_id} again?")
     else:
-        await message.answer(f"No way")
+        chat_id = message.chat.id
+
+    await remove_ai_user(chat_id)
+    AI_USERS = await get_ai_users()
+    await message.answer(f"Uhh whos {chat_id} again?")
 
 
 @dp.message(Command("asa_id"))
