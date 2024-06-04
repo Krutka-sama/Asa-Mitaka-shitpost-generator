@@ -247,7 +247,6 @@ async def asa_shitpost(message: types.Message):
                 text = message.text.split(maxsplit=1)[1]
             except:
                 text = await get_random_text(message.chat.id)
-    print(text)
     if not text or not img:
         await message.answer("Nah")
         return
